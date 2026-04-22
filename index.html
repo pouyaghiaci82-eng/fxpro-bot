@@ -5,77 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>FXPro Markets</title>
 <script src="https://telegram.org/js/telegram-web-app.js">
-  // ── Form Validation & Submit ──
-  function togglePass() {
-    const p = document.getElementById('password');
-    p.type = p.type === 'password' ? 'text' : 'password';
-  }
-
-  function setErr(id, msg) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = msg;
-    const field = el ? el.previousElementSibling : null;
-    if (field && field.classList.contains('input-field')) {
-      field.classList.toggle('error', !!msg);
-    }
-    // handle pass-wrap
-    if (id === 'errPass') {
-      const passField = document.getElementById('password');
-      if (passField) passField.classList.toggle('error', !!msg);
-    }
-  }
-
-  function submitForm() {
-    const first  = document.getElementById('firstName').value.trim();
-    const last   = document.getElementById('lastName').value.trim();
-    const email  = document.getElementById('email').value.trim();
-    const phone  = document.getElementById('phone').value.trim();
-    const dob    = document.getElementById('dob').value;
-    const pass   = document.getElementById('password').value;
-
-    // clear errors
-    ['errFirst','errLast','errEmail','errPhone','errDob','errPass'].forEach(id => setErr(id, ''));
-
-    let valid = true;
-
-    if (!first) { setErr('errFirst', 'Required'); valid = false; }
-    if (!last)  { setErr('errLast',  'Required'); valid = false; }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setErr('errEmail', 'Enter a valid email'); valid = false;
-    }
-    if (!phone || phone.length < 7) {
-      setErr('errPhone', 'Enter a valid phone number'); valid = false;
-    }
-    if (!dob) { setErr('errDob', 'Required'); valid = false; }
-    else {
-      const age = Math.floor((Date.now() - new Date(dob)) / (365.25*24*60*60*1000));
-      if (age < 18) { setErr('errDob', 'Must be 18 or older'); valid = false; }
-    }
-    if (pass.length < 8) { setErr('errPass', 'Min. 8 characters'); valid = false; }
-
-    if (!valid) return;
-
-    // Build URL with params
-    const params = new URLSearchParams({
-      first_name: first,
-      last_name:  last,
-      email:      email,
-      phone:      phone,
-      dob:        dob,
-    });
-    const url = 'https://probroker.group?' + params.toString();
-    document.getElementById('finalLink').href = url;
-
-    // Show success view
-    document.getElementById('formView').style.display = 'none';
-    document.getElementById('successView').style.display = 'block';
-    window.scrollTo(0, 0);
-
-    // Auto-open in Telegram browser if available
-    if (window.Telegram && window.Telegram.WebApp) {
-      window.Telegram.WebApp.openLink(url);
-    }
-  }
 
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -948,7 +877,87 @@
     });
     renderMarkets(instruments);
   }, 3000);
+
+  // ── Toggle Password Visibility ──
+  function togglePass() {
+    var p = document.getElementById('password');
+    p.type = (p.type === 'password') ? 'text' : 'password';
+  }
+
+  // ── Set/Clear Field Error ──
+  function setErr(errId, fieldId, msg) {
+    var errEl = document.getElementById(errId);
+    var fieldEl = document.getElementById(fieldId);
+    if (errEl) errEl.textContent = msg;
+    if (fieldEl) {
+      if (msg) fieldEl.classList.add('error');
+      else fieldEl.classList.remove('error');
+    }
+  }
+
+  // ── Submit Form ──
+  function submitForm() {
+    var first = document.getElementById('firstName').value.trim();
+    var last  = document.getElementById('lastName').value.trim();
+    var email = document.getElementById('email').value.trim();
+    var phone = document.getElementById('phone').value.trim();
+    var dob   = document.getElementById('dob').value;
+    var pass  = document.getElementById('password').value;
+
+    // Clear all errors
+    setErr('errFirst', 'firstName', '');
+    setErr('errLast',  'lastName',  '');
+    setErr('errEmail', 'email',     '');
+    setErr('errPhone', 'phone',     '');
+    setErr('errDob',   'dob',       '');
+    setErr('errPass',  'password',  '');
+
+    var valid = true;
+
+    if (!first) { setErr('errFirst', 'firstName', 'Required'); valid = false; }
+    if (!last)  { setErr('errLast',  'lastName',  'Required'); valid = false; }
+
+    var emailOk = email && email.indexOf('@') > 0 && email.indexOf('.') > 0;
+    if (!emailOk) { setErr('errEmail', 'email', 'Enter a valid email'); valid = false; }
+
+    if (!phone || phone.replace(/[^0-9]/g,'').length < 7) {
+      setErr('errPhone', 'phone', 'Enter a valid phone number'); valid = false;
+    }
+
+    if (!dob) {
+      setErr('errDob', 'dob', 'Required'); valid = false;
+    } else {
+      var age = Math.floor((Date.now() - new Date(dob).getTime()) / (365.25*24*60*60*1000));
+      if (age < 18) { setErr('errDob', 'dob', 'Must be 18 or older'); valid = false; }
+    }
+
+    if (!pass || pass.length < 8) {
+      setErr('errPass', 'password', 'Min. 8 characters'); valid = false;
+    }
+
+    if (!valid) return;
+
+    // Build URL
+    var url = 'https://probroker.group';
+
+    // Update final link
+    document.getElementById('finalLink').href = url;
+
+    // Hide form, show success
+    document.getElementById('formView').style.display = 'none';
+    document.getElementById('successView').style.display = 'block';
+    window.scrollTo(0, 0);
+
+    // Open in Telegram browser
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
+      window.Telegram.WebApp.openLink(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  }
+
 </script>
 
 </body>
 </html>
+
